@@ -555,10 +555,14 @@ class SelectedButtonState extends State<SelectedButton> {
   /// states and updates them based on user interactions and the selection value.
   late WidgetStatesController statesController;
 
+  // Kept until dispose() so it is never disposed while still in use.
+  WidgetStatesController? _internalStatesController;
+
   @override
   void initState() {
     super.initState();
-    statesController = widget.statesController ?? WidgetStatesController();
+    statesController = widget.statesController ??
+        (_internalStatesController ??= WidgetStatesController());
     statesController.update(WidgetState.selected, widget.value);
   }
 
@@ -566,12 +570,19 @@ class SelectedButtonState extends State<SelectedButton> {
   void didUpdateWidget(SelectedButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.statesController != widget.statesController) {
-      statesController = widget.statesController ?? WidgetStatesController();
+      statesController = widget.statesController ??
+          (_internalStatesController ??= WidgetStatesController());
       statesController.update(WidgetState.selected, widget.value);
     }
     if (oldWidget.value != widget.value) {
       statesController.update(WidgetState.selected, widget.value);
     }
+  }
+
+  @override
+  void dispose() {
+    _internalStatesController?.dispose();
+    super.dispose();
   }
 
   @override

@@ -741,11 +741,17 @@ class _ClickableState extends State<Clickable> {
   DateTime? _lastTap;
   int _tapCount = 0;
 
+  // Internally created instances are kept until dispose(), so they are never
+  // disposed while a child may still reference them.
+  FocusNode? _ownedFocusNode;
+  WidgetStatesController? _ownedController;
+
   @override
   void initState() {
     super.initState();
-    _focusNode = widget.focusNode ?? FocusNode();
-    _controller = widget.statesController ?? WidgetStatesController();
+    _focusNode = widget.focusNode ?? (_ownedFocusNode ??= FocusNode());
+    _controller = widget.statesController ??
+        (_ownedController ??= WidgetStatesController());
     _controller.update(WidgetState.disabled, !widget.enabled);
   }
 
@@ -753,15 +759,23 @@ class _ClickableState extends State<Clickable> {
   void didUpdateWidget(covariant Clickable oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.statesController != oldWidget.statesController) {
-      _controller = widget.statesController ?? WidgetStatesController();
+      _controller = widget.statesController ??
+          (_ownedController ??= WidgetStatesController());
     }
     _controller.update(WidgetState.disabled, !widget.enabled);
     if (widget.focusNode != oldWidget.focusNode) {
-      _focusNode = widget.focusNode ?? FocusNode();
+      _focusNode = widget.focusNode ?? (_ownedFocusNode ??= FocusNode());
     }
     if (widget.disableHoverEffect) {
       _controller.update(WidgetState.hovered, false);
     }
+  }
+
+  @override
+  void dispose() {
+    _ownedFocusNode?.dispose();
+    _ownedController?.dispose();
+    super.dispose();
   }
 
   static Future<void> feedbackForTap(BuildContext context) async {
