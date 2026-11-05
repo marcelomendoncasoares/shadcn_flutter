@@ -227,6 +227,18 @@ class ScaffoldBarData {
 /// Manages the scaffold's layout state and provides methods for building
 /// header, footer, and body sections with proper theming and constraints.
 class ScaffoldState extends State<Scaffold> {
+  // Overlay only reads `initialEntries` once, so the entry is created once and
+  // owned by this state. Rebuilding the Overlay rebuilds the entry's builder.
+  late final OverlayEntry _contentEntry = OverlayEntry(builder: _buildContent);
+
+  @override
+  void dispose() {
+    _contentEntry
+      ..remove()
+      ..dispose();
+    super.dispose();
+  }
+
   /// Builds the header section of the scaffold.
   ///
   /// Parameters:
@@ -418,7 +430,7 @@ class ScaffoldState extends State<Scaffold> {
 
   @override
   Widget build(BuildContext context) {
-    return Overlay(initialEntries: [OverlayEntry(builder: _buildContent)]);
+    return Overlay(initialEntries: [_contentEntry]);
   }
 }
 
@@ -895,6 +907,13 @@ class _ScaffoldRenderFlex extends RenderBox
 
   final ValueNotifier<double> _headerSize = ValueNotifier(0);
   final ValueNotifier<double> _footerSize = ValueNotifier(0);
+
+  @override
+  void dispose() {
+    _headerSize.dispose();
+    _footerSize.dispose();
+    super.dispose();
+  }
 
   @override
   void setupParentData(covariant RenderObject child) {
