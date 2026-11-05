@@ -650,16 +650,9 @@ Widget buildShadcnDialogTransitions(
   bool fullScreen,
   Widget child,
 ) {
-  var scaleTransition = ScaleTransition(
-    scale: CurvedAnimation(
-      parent: animation.drive(Tween<double>(begin: 0.7, end: 1.0)),
-      curve: Curves.easeOut,
-      reverseCurve: Curves.easeIn,
-    ),
-    child: FadeTransition(
-      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-      child: child,
-    ),
+  var scaleTransition = _ShadcnDialogTransition(
+    animation: animation,
+    child: child,
   );
   return FocusScope(
     child: fullScreen
@@ -837,5 +830,69 @@ class DialogOverlayCompleter<T> extends OverlayCompleter<T> {
     } else {
       route.navigator?.removeRoute(route);
     }
+  }
+}
+
+/// Owns the [CurvedAnimation]s used by [buildShadcnDialogTransitions] so they
+/// are disposed instead of being recreated (and leaked) on every build.
+class _ShadcnDialogTransition extends StatefulWidget {
+  const _ShadcnDialogTransition({
+    required this.animation,
+    required this.child,
+  });
+
+  final Animation<double> animation;
+  final Widget child;
+
+  @override
+  State<_ShadcnDialogTransition> createState() =>
+      _ShadcnDialogTransitionState();
+}
+
+class _ShadcnDialogTransitionState extends State<_ShadcnDialogTransition> {
+  late CurvedAnimation _scale;
+  late CurvedAnimation _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _createAnimations();
+  }
+
+  void _createAnimations() {
+    _scale = CurvedAnimation(
+      parent: widget.animation.drive(Tween<double>(begin: 0.7, end: 1.0)),
+      curve: Curves.easeOut,
+      reverseCurve: Curves.easeIn,
+    );
+    _opacity = CurvedAnimation(parent: widget.animation, curve: Curves.easeOut);
+  }
+
+  void _disposeAnimations() {
+    _scale.dispose();
+    _opacity.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ShadcnDialogTransition oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animation != oldWidget.animation) {
+      _disposeAnimations();
+      _createAnimations();
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposeAnimations();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scale,
+      child: FadeTransition(opacity: _opacity, child: widget.child),
+    );
   }
 }

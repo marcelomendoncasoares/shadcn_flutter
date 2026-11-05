@@ -636,7 +636,20 @@ class _ToastLayerState extends State<ToastLayer> {
       setState(() {
         entries[entry.location]!.entries.remove(last);
       });
+      // The entry's layout widget still listens to `_isClosing` until the
+      // next frame removes it, so dispose it afterwards.
+      WidgetsBinding.instance.addPostFrameCallback((_) => last._dispose());
     }
+  }
+
+  @override
+  void dispose() {
+    for (final location in entries.values) {
+      for (final entry in location.entries) {
+        entry._dispose();
+      }
+    }
+    super.dispose();
   }
 
   @override
@@ -858,6 +871,11 @@ class _AttachedToastEntry implements ToastOverlay {
     _isClosing.value = true;
     _attached!._triggerEntryClosing();
     _attached = null;
+  }
+
+  void _dispose() {
+    _attached = null;
+    _isClosing.dispose();
   }
 }
 

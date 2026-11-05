@@ -1470,6 +1470,8 @@ class DrawerEntryWidgetState<T> extends State<DrawerEntryWidget<T>>
     if (widget.animationController == null) {
       _controller.dispose();
     }
+    additionalOffset.dispose();
+    _focusScopeNode.dispose();
     super.dispose();
   }
 
