@@ -1131,6 +1131,7 @@ class Select<T> extends StatefulWidget
 class SelectState<T> extends State<Select<T>>
     with FormValueSupplier<T, Select<T>> {
   late FocusNode _focusNode;
+  FocusNode? _internalFocusNode;
   final OverlayController _popoverController = OverlayController();
   late ValueNotifier<T?> _valueNotifier;
 
@@ -1196,7 +1197,7 @@ class SelectState<T> extends State<Select<T>>
   @override
   void initState() {
     super.initState();
-    _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode = widget.focusNode ?? (_internalFocusNode ??= FocusNode());
     _valueNotifier = ValueNotifier(widget.value);
     formValue = widget.value;
   }
@@ -1205,16 +1206,18 @@ class SelectState<T> extends State<Select<T>>
   void didUpdateWidget(Select<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.focusNode != oldWidget.focusNode) {
-      _focusNode = widget.focusNode ?? FocusNode();
+      _focusNode = widget.focusNode ?? (_internalFocusNode ??= FocusNode());
     }
     if (widget.value != oldWidget.value) {
       WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        if (!mounted) return;
         _valueNotifier.value = widget.value;
       });
       formValue = widget.value;
     } else if (widget.valueSelectionPredicate !=
         oldWidget.valueSelectionPredicate) {
       WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        if (!mounted) return;
         _valueNotifier.value = widget.value;
       });
     }
@@ -1243,6 +1246,8 @@ class SelectState<T> extends State<Select<T>>
   @override
   void dispose() {
     _popoverController.dispose();
+    _internalFocusNode?.dispose();
+    _valueNotifier.dispose();
     super.dispose();
   }
 
@@ -1940,13 +1945,19 @@ class _SelectPopupState<T> extends State<SelectPopup<T>>
     with SelectPopupHandle {
   late TextEditingController _searchController;
   late ScrollController _scrollController;
+  // Internally created controllers are kept until dispose() so they are never
+  // disposed while still attached to a child.
+  TextEditingController? _internalSearchController;
+  ScrollController? _internalScrollController;
   SelectData? _selectData;
 
   @override
   void initState() {
     super.initState();
-    _searchController = widget.searchController ?? TextEditingController();
-    _scrollController = widget.scrollController ?? ScrollController();
+    _searchController = widget.searchController ??
+        (_internalSearchController ??= TextEditingController());
+    _scrollController = widget.scrollController ??
+        (_internalScrollController ??= ScrollController());
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       // because the controller did not get notified when a scroll position is attached
       if (!mounted) return;
@@ -1958,11 +1969,20 @@ class _SelectPopupState<T> extends State<SelectPopup<T>>
   void didUpdateWidget(covariant SelectPopup<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.searchController != oldWidget.searchController) {
-      _searchController = widget.searchController ?? TextEditingController();
+      _searchController = widget.searchController ??
+          (_internalSearchController ??= TextEditingController());
     }
     if (widget.scrollController != oldWidget.scrollController) {
-      _scrollController = widget.scrollController ?? ScrollController();
+      _scrollController = widget.scrollController ??
+          (_internalScrollController ??= ScrollController());
     }
+  }
+
+  @override
+  void dispose() {
+    _internalSearchController?.dispose();
+    _internalScrollController?.dispose();
+    super.dispose();
   }
 
   @override

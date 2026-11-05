@@ -2101,6 +2101,7 @@ class TextFieldState extends State<TextField>
   final List<_AttachedInputFeature> _attachedFeatures = [];
 
   late WidgetStatesController _statesController;
+  WidgetStatesController? _internalStatesController;
 
   RestorableTextEditingController? _controller;
 
@@ -2162,7 +2163,8 @@ class TextFieldState extends State<TextField>
     _lastNotifiedText = widget.controller?.text ?? widget.initialValue ?? '';
     _effectiveFocusNode.canRequestFocus = widget.enabled;
     _effectiveFocusNode.addListener(_handleFocusChanged);
-    _statesController = widget.statesController ?? WidgetStatesController();
+    _statesController = widget.statesController ??
+        (_internalStatesController = WidgetStatesController());
     String effectiveText = widget.controller?.text ?? widget.initialValue ?? '';
     formValue = effectiveText.isEmpty ? null : effectiveText;
     for (final feature in widget.features) {
@@ -2295,6 +2297,9 @@ class TextFieldState extends State<TextField>
     _effectiveFocusNode.removeListener(_handleFocusChanged);
     _focusNode?.dispose();
     _controller?.dispose();
+    _internalStatesController?.dispose();
+    _effectiveText.dispose();
+    _effectiveSelection.dispose();
     super.dispose();
   }
 
