@@ -1,3 +1,14 @@
+## [Unreleased]
+
+### Fixed
+
+- Fixed resources that were never disposed, as reported by the leak tracker:
+  `Clickable`, `SelectedButton`, `TextField` and `Select` (including its popup)
+  now dispose the focus nodes, controllers and notifiers they create;
+  `Scaffold` no longer creates a new `OverlayEntry` on every build and disposes
+  its layout notifiers; dialog transitions, drawers and toasts dispose their
+  `CurvedAnimation`s, focus scope nodes and notifiers.
+
 ## [0.0.55]
 
 ### Breaking
